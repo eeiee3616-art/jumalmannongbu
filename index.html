@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#ffffff">
+<title>주말만 농부</title>
+<link rel="manifest" href="manifest.json">
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,-apple-system,sans-serif;background:#f6f5f0;color:#20211f}
+.app{max-width:520px;margin:auto;min-height:100vh;background:#fff;padding-bottom:78px}
+header{padding:22px 18px 12px;font-size:23px;font-weight:800}.sub{font-size:13px;color:#777;font-weight:500;margin-top:4px}
+nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(520px,100%);display:flex;background:#fff;border-top:1px solid #ddd}
+nav button{flex:1;border:0;background:white;padding:15px 4px;font-size:14px}
+section{display:none;padding:10px 16px}section.active{display:block}
+.card{border:1px solid #e5e3dc;border-radius:16px;padding:15px;margin:10px 0;background:#fff}
+.badge{display:inline-block;background:#eef2e9;border-radius:20px;padding:5px 9px;font-size:12px;margin-bottom:7px}
+.price{font-weight:800}.meta{font-size:13px;color:#777;margin-top:6px}
+button.primary{width:100%;padding:14px;border:0;border-radius:12px;background:#263426;color:#fff;font-weight:700;font-size:16px}
+input,textarea{width:100%;padding:12px;border:1px solid #d7d5cf;border-radius:10px;margin:5px 0 12px;font:inherit}
+label{font-size:13px;font-weight:700}.empty{color:#777;text-align:center;padding:40px 10px}
+</style>
+</head>
+<body><div class="app">
+<header>주말만 농부<div class="sub">내가 키운 만큼만, 가까운 이웃에게</div></header>
+
+<section id="home" class="active">
+<div class="card"><span class="badge">직접 재배 · 어린깻잎</span><div><b>나물용 어린깻잎</b></div><div class="price">100g · 1,000원</div><div class="meta">4봉 · 서울 근교에서 수확</div></div>
+<div class="card"><span class="badge">직접 재배 · 바질</span><div><b>생바질</b></div><div class="price">100g · 4,000원</div><div class="meta">1봉 · 주말 밭에서 수확</div></div>
+<div class="card"><span class="badge">직접 재배 · 깻잎</span><div><b>쌈용 깻잎</b></div><div class="price">40g · 1,000원</div><div class="meta">4봉 · 약 30~40장</div></div>
+<div class="card"><span class="badge">직접 재배 · 박하</span><div><b>생박하잎</b></div><div class="price">20g · 2,000원</div><div class="meta">1봉</div></div>
+</section>
+
+<section id="sell">
+<h2>농산물 올리기</h2>
+<label>품목</label><input id="item" placeholder="예: 자두">
+<label>가격</label><input id="price" placeholder="예: 3,000원">
+<label>수량</label><input id="qty" placeholder="예: 2봉">
+<label>거래지역</label><input id="area" placeholder="예: 신도림역">
+<label>설명</label><textarea id="desc" rows="4" placeholder="직접 키운 농산물에 대해 적어주세요."></textarea>
+<button class="primary" onclick="addItem()">올리기</button>
+</section>
+
+<section id="mine"><h2>내가 올린 것</h2><div id="mineList" class="empty">아직 등록한 농산물이 없습니다.</div></section>
+
+<nav><button onclick="show('home')">🏡<br>둘러보기</button><button onclick="show('sell')">＋<br>판매하기</button><button onclick="show('mine')">🌱<br>내 농산물</button></nav>
+</div>
+<script>
+function show(id){document.querySelectorAll('section').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active')}
+function addItem(){
+ let item=document.getElementById('item').value.trim(),price=document.getElementById('price').value.trim();
+ if(!item||!price){alert('품목과 가격은 입력해주세요.');return}
+ let data=JSON.parse(localStorage.getItem('myproduce')||'[]');
+ data.unshift({item,price,qty:qty.value,area:area.value,desc:desc.value});
+ localStorage.setItem('myproduce',JSON.stringify(data));render();show('mine');
+}
+function render(){
+ let data=JSON.parse(localStorage.getItem('myproduce')||'[]'), el=document.getElementById('mineList');
+ if(!data.length){el.className='empty';el.innerHTML='아직 등록한 농산물이 없습니다.';return}
+ el.className='';el.innerHTML=data.map(x=>`<div class="card"><span class="badge">직접 재배</span><div><b>${x.item}</b></div><div class="price">${x.price}</div><div class="meta">${x.qty||''} ${x.area?'· '+x.area:''}</div><div class="meta">${x.desc||''}</div></div>`).join('');
+}render();
+if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+</script></body></html>
