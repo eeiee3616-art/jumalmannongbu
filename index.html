@@ -35,6 +35,7 @@ label{font-size:13px;font-weight:700}.empty{color:#777;text-align:center;padding
 <label>품목</label><input id="item" placeholder="예: 자두">
 <label>가격</label><input id="price" placeholder="예: 3,000원">
 <label>수량</label><input id="qty" placeholder="예: 2봉">
+ <label>재배지역</label><input id="growArea" placeholder="예: 인천 강화군">
 <label>거래지역</label><input id="area" placeholder="예: 신도림역">
 <label>설명</label><textarea id="desc" rows="4" placeholder="직접 키운 농산물에 대해 적어주세요."></textarea>
 <button class="primary" onclick="addItem()">올리기</button>
@@ -79,6 +80,7 @@ async function addItem(){
   const item = document.getElementById('item').value.trim();
   const price = document.getElementById('price').value.trim();
   const qty = document.getElementById('qty').value.trim();
+  const growArea = document.getElementById('growArea').value.trim();
   const area = document.getElementById('area').value.trim();
   const desc = document.getElementById('desc').value.trim();
 
@@ -92,6 +94,7 @@ async function addItem(){
       item,
       price,
       qty,
+      growArea,
       area,
       desc,
       createdAt: firebase.firestore.FieldValue.serverTimestamp()
@@ -104,6 +107,7 @@ async function addItem(){
     document.getElementById('item').value = '';
     document.getElementById('price').value = '';
     document.getElementById('qty').value = '';
+    document.getElementById('growArea').value = '';
     document.getElementById('area').value = '';
     document.getElementById('desc').value = '';
 
@@ -121,7 +125,9 @@ function cardHTML(x){
       <span class="badge">직접 재배</span>
       <div><b>${safe(x.item)}</b></div>
       <div class="price">${safe(x.price)}</div>
-      <div class="meta">${safe(x.qty)} ${x.area ? '· ' + safe(x.area) : ''}</div>
+      <div class="meta">${safe(x.qty)}</div>
+      ${x.growArea ? `<div class="meta">🌱 재배지역 · ${safe(x.growArea)}</div>` : ''}
+      ${x.area ? `<div class="meta">📍 거래지역 · ${safe(x.area)}</div>` : ''}
       ${x.desc ? `<div class="meta">${safe(x.desc)}</div>` : ''}
     </div>`;
 }
