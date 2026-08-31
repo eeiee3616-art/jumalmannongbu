@@ -44,19 +44,130 @@ label{font-size:13px;font-weight:700}.empty{color:#777;text-align:center;padding
 
 <nav><button onclick="show('home')">🏡<br>둘러보기</button><button onclick="show('sell')">＋<br>판매하기</button><button onclick="show('mine')">🌱<br>내 농산물</button></nav>
 </div>
+ <script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/11.10.0/firebase-firestore-compat.js"></script>
+
 <script>
-function show(id){document.querySelectorAll('section').forEach(x=>x.classList.remove('active'));document.getElementById(id).classList.add('active')}
-function addItem(){
- let item=document.getElementById('item').value.trim(),price=document.getElementById('price').value.trim();
- if(!item||!price){alert('품목과 가격은 입력해주세요.');return}
- let data=JSON.parse(localStorage.getItem('myproduce')||'[]');
- data.unshift({item,price,qty:qty.value,area:area.value,desc:desc.value});
- localStorage.setItem('myproduce',JSON.stringify(data));render();show('mine');
+const firebaseConfig = {
+  apiKey: "AIzaSyCULGwPo5DdsOnAwHf2L6gzsjfD4rEa0Rw",
+  authDomain: "jumalmannongbu-6a2dc.firebaseapp.com",
+  projectId: "jumalmannongbu-6a2dc",
+  storageBucket: "jumalmannongbu-6a2dc.firebasestorage.app",
+  messagingSenderId: "332476990696",
+  appId: "1:332476990696:web:97973396d042e195a1f55d"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+</script>
+<script>
+function show(id){
+  document.querySelectorAll('section').forEach(x => x.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
 }
-function render(){
- let data=JSON.parse(localStorage.getItem('myproduce')||'[]'), el=document.getElementById('mineList');
- if(!data.length){el.className='empty';el.innerHTML='아직 등록한 농산물이 없습니다.';return}
- el.className='';el.innerHTML=data.map(x=>`<div class="card"><span class="badge">직접 재배</span><div><b>${x.item}</b></div><div class="price">${x.price}</div><div class="meta">${x.qty||''} ${x.area?'· '+x.area:''}</div><div class="meta">${x.desc||''}</div></div>`).join('');
-}render();
-if('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
-</script></body></html>
+
+function safe(v=''){
+  return String(v)
+    .replaceAll('&','&amp;')
+    .replaceAll('<','&lt;')
+    .replaceAll('>','&gt;')
+    .replaceAll('"','&quot;')
+    .replaceAll("'","&#039;");
+}
+
+async function addItem(){
+  const item = document.getElementById('item').value.trim();
+  const price = document.getElementById('price').value.trim();
+  const qty = document.getElementById('qty').value.trim();
+  const area = document.getElementById('area').value.trim();
+  const desc = document.getElementById('desc').value.trim();
+
+  if(!item || !price){
+    alert('품목과 가격은 입력해주세요.');
+    return;
+  }
+
+  try{
+    const ref = await db.collection('produce').add({
+      item,
+      price,
+      qty,
+      area,
+      desc,
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    const mine = JSON.parse(localStorage.getItem('myProduceIds') || '[]');
+    mine.unshift(ref.id);
+    localStorage.setItem('myProduceIds', JSON.stringify(mine));
+
+    document.getElementById('item').value = '';
+    document.getElementById('price').value = '';
+    document.getElementById('qty').value = '';
+    document.getElementById('area').value = '';
+    document.getElementById('desc').value = '';
+
+    alert('농산물이 등록되었습니다.');
+    show('home');
+  }catch(e){
+    console.error(e);
+    alert('등록에 실패했습니다.');
+  }
+}
+
+function cardHTML(x){
+  return `
+    <div class="card">
+      <span class="badge">직접 재배</span>
+      <div><b>${safe(x.item)}</b></div>
+      <div class="price">${safe(x.price)}</div>
+      <div class="meta">${safe(x.qty)} ${x.area ? '· ' + safe(x.area) : ''}</div>
+      ${x.desc ? `<div class="meta">${safe(x.desc)}</div>` : ''}
+    </div>`;
+}
+
+let sharedBox = document.getElementById('sharedList');
+
+if(!sharedBox){
+  sharedBox = document.createElement('div');
+  sharedBox.id = 'sharedList';
+  document.getElementById('home').appendChild(sharedBox);
+}
+
+db.collection('produce')
+  .orderBy('createdAt','desc')
+  .onSnapshot(snapshot => {
+    sharedBox.innerHTML = '';
+    snapshot.forEach(doc => {
+      sharedBox.innerHTML += cardHTML(doc.data());
+    });
+    renderMine(snapshot);
+  }, error => {
+    console.error(error);
+  });
+
+function renderMine(snapshot){
+  const ids = JSON.parse(localStorage.getItem('myProduceIds') || '[]');
+  const el = document.getElementById('mineList');
+
+  const mine = [];
+  snapshot.forEach(doc => {
+    if(ids.includes(doc.id)){
+      mine.push(doc.data());
+    }
+  });
+
+  if(!mine.length){
+    el.className = 'empty';
+    el.innerHTML = '아직 등록한 농산물이 없습니다.';
+    return;
+  }
+
+  el.className = '';
+  el.innerHTML = mine.map(cardHTML).join('');
+}
+
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js');
+}
+</script>
